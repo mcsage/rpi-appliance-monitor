@@ -105,4 +105,6 @@ venv.bak/
 
 vibration_settings_dryer.ini
 vibration_settings_washer.ini
+vibration_settings_coffee.ini
+
 pushover_test.ahk
