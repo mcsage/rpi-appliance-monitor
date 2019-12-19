@@ -11,7 +11,9 @@ import json
 import tweepy
 from time import localtime, strftime
 import paho.mqtt.publish as mqttpublish
+import socket
 
+from influxdb import InfluxDBClient
 from configparser import ConfigParser
 from tweepy import OAuthHandler as TweetHandler
 from slackclient import SlackClient
@@ -169,6 +171,28 @@ def telegram(msg):
     except:
         pass
 
+def influx(msg):
+    try:
+        hostname = socket.gethostname()
+        client = InfluxDBClient(influx_host, influx_port, influx_user, influx_password, influx_db)
+        json_data = [
+            {
+                "measurement": "vibration_sensor",
+                "tags": {
+                    "host": hostname
+                },
+                "time": strftime("%Y-%m-%d %H:%M:%S", localtime()),
+                "fields": {
+                    "value": 1
+                }
+            }
+        ]
+        client.write_points(json_data)
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except:
+        pass
+
 
 def send_alert(message):
     if len(message) > 1:
@@ -193,6 +217,8 @@ def send_alert(message):
             email(message)
         if len(telegram_api_token) > 0 and len(telegram_user_id) > 0:
             telegram(message)
+        if len(influx_host) > 0:
+            influx(message)
 
 
 def send_appliance_active_message():
@@ -282,6 +308,13 @@ email_server = config.get('email', 'server')
 email_port = config.get('email', 'port')
 telegram_api_token = config.get('telegram', 'telegram_api_token')
 telegram_user_id = config.get('telegram', 'telegram_user_id')
+
+influx_host = config.get('influx', 'influx_host')
+influx_port = config.get('influx', 'influx_port')
+influx_db = config.get('influx', 'influx_db')
+influx_user = config.get('influx', 'influx_user')
+influx_password = config.get('influx', 'influx_password')
+
 
 if verbose:
     logging.getLogger().setLevel(logging.DEBUG)
